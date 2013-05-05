@@ -1,3 +1,6 @@
+/**
+ * "Classical" event dispatching system. Classes that do need to dispatch event should extend the EventDispatcher.
+ */
 (function (ns) {
     var UID = 0;
 

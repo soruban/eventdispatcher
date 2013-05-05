@@ -1,7 +1,20 @@
+/**
+ *
+ */
 (function(ns){
     var UID = 0;
-    var UID_FIELD = "_uid";
     var DEFAULT_CHANNEL = "default_channel";
+
+    /**
+     * The base class to be used for custom events. Only requires an eventName.
+     * @constructor
+     * @param {String} eventName
+     * @param {Object=} target , optional, the target of the event.
+     */
+    var Event = function(eventName, target) {
+        this.name = eventName;
+        this.target = target;
+    };
 
     /**
      * An event channel allows is a 'dedicated bus' with an id that allows obejct to dispatch and received events.
@@ -12,33 +25,22 @@
         if(!channelId) {
             channelId = new Date().getMilliseconds() + ""  + Math.round(Math.random() * 1000);
         }
-        this._currTargets = {};
+        this._id = channelId;
+        this._listeners = {};
     };
 
     /**
      *
-     * @param {Object} target , the object that will be the publisher of the event.
      * @param {Event|String} eventName , the name of the event to listen to.
      * @param {Function} callback , the callback to trigger when the event is triggered on the target.
      * @param {Object} context , the context to use in the callback.
      */
-    EventChannel.prototype.listen = function(target, eventName, callback, context) {
-        var uid, listenersForTarget, listenersForName;
-
-        // Give a UID for the target if it does not have one.
-        uid = target[UID_FIELD];
-        if(!uid) {
-            uid = target[UID_FIELD] = this._getUID();
-        }
-
-        // Check if we have a map of listeners for this target or create a new one.
-        if(!this._currTargets[uid]) {
-            listenersForTarget = this._currTargets[uid] = {};
-        }
+    EventChannel.prototype.listen = function(eventName, callback, context) {
+        var listenersForName;
 
         // Check if there are any listeners for this event name or create a new array.
-        if(!listenersForTarget[eventName]) {
-            listenersForName = listenersForTarget[eventName] = [];
+        if(!this._listeners[eventName]) {
+            listenersForName = this._listeners[eventName] = [];
         }
 
         listenersForName.push({
@@ -47,25 +49,22 @@
         });
     };
 
-    EventChannel.prototype.unlisten = function(target, eventName, callback, context) {
-        if(target[UID_FIELD] && this._currTargets[UID_FIELD] && this._currTargets[UID_FIELD][eventName]) {
-            var listeners = this._currTargets[UID_FIELD][eventName];
-            var count = listeners.count;
-            for(var i = 0; i < count; i++) {
-                if(listeners[i].callback === callback && listeners[i].context === context) {
-                    listeners.splice(i, 1);
-                    break;
-                }
+    EventChannel.prototype.unlisten = function(eventName, callback, context) {
+        var listeners = this._currTargets[eventName];
+        var count = listeners.length;
+        for(var i = 0; i < count; i++) {
+            if(listeners[i].callback === callback && listeners[i].context === context) {
+                listeners.splice(i, 1);
+                break;
             }
-
-            // TODO: Delete the listenersForName & listenersForTarget if the arrays/maps are empty?
         }
     };
 
     EventChannel.prototype.dispatch = function(target, event) {
-        if(!this._muted && target[UID_FIELD] && this._currTargets[UID_FIELD] && this._currTargets[UID_FIELD][eventName]) {
-            var listeners = this._currTargets[UID_FIELD][eventName];
-            var count = listeners.count;
+        if(!this._muted) {
+            var eventName = typeof event === "string" ? event : event.type;
+            var listeners = this._currTargets[eventName];
+            var count = listeners.length;
             for(var i = 0; i < count; i++) {
                 listeners[i].callback.call(listeners[i].context, event);
             }
@@ -100,38 +99,36 @@
 
     /**
      * Sets up a listener for the eventName on target, the given callback will be called.
-     * @param {Object} target
      * @param {String} eventName
      * @param {Function} callback
      * @param {Object} context
-     * @param {String=} channel , optional, the name of the channel to set the listen on.
+     * @param {String=} channelId , optional, the name of the channel to set the listen on.
      * @throws {Error} if the channel does not exist.
      */
-    EventBus.prototype.listen = function(target, eventName, callback, context, channel) {
-        if(channel && !this._channels[id]) {
+    EventBus.prototype.listen = function(eventName, callback, context, channelId) {
+        if(channelId && !this._channels[id]) {
             throw new Error("Channel does not exists");
         }
         else {
-            channel = channel || DEFAULT_CHANNEL;
-            this._channels[channel].listen(target, eventName, callback);
+            channelId = channelId || DEFAULT_CHANNEL;
+            this._channels[channelId].listen(eventName, callback, context);
         }
     };
 
     /**
-     * @param {Object} target
      * @param {String} eventName
      * @param {Function} callback
      * @param {Object} context
-     * @param {String=} channel , optional, the name of the channel to set the listen on.
+     * @param {String=} channelId , optional, the name of the channel to set the listen on.
      * @returns {Boolean} true if we managed to successfully remoe the event, false otherwise.
      */
-    EventBus.prototype.unlisten = function(target, eventName, callback, context, channel) {
-        if(channel && !this._channels[id]) {
+    EventBus.prototype.unlisten = function(eventName, callback, context, channelId) {
+        if(channelId && !this._channels[channelId]) {
             return false;
         }
         else {
-            channel = channel || DEFAULT_CHANNEL;
-            return this._channels[channel].unlisten(target, eventName, callback, context);
+            channelId = channelId || DEFAULT_CHANNEL;
+            return this._channels[channelId].unlisten(eventName, callback, context);
         }
     };
 
@@ -184,5 +181,3 @@
     };
 
 })(window);
-
-//TODO: Wrap target in Event object? e.g. var ev = new Event("click", myObject)?
