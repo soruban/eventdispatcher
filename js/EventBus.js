@@ -1,5 +1,5 @@
 /**
- *
+ * EventBus that is made of one or more "channels" on which events are dispatched and listened to.
  */
 (function(ns){
     var UID = 0;
