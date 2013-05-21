@@ -1,9 +1,15 @@
 /**
- * EventBus that is made of one or more "channels" on which events are dispatched and listened to.
+ * EventBus that is made of one or more "channels" on which events are dispatched from and listened to.
+ *
+ * Only one instance of the EventBus should be created.
+ * EventChannels should only be created via EventBus.createChannel()
  */
 (function(ns){
-    var UID = 0;
     var DEFAULT_CHANNEL = "default_channel";
+
+    //==================================================================================================================
+    //  EventChannel
+    //==================================================================================================================
 
     /**
      * The base class to be used for custom events. Only requires an eventName.
@@ -16,28 +22,46 @@
         this.target = target;
     };
 
+    //==================================================================================================================
+    //  EventChannel
+    //==================================================================================================================
+
     /**
-     * An event channel allows is a 'dedicated bus' with an id that allows obejct to dispatch and received events.
+     * An event channel is a 'dedicated bus' with an id that allows objects to dispatch and receive events.
      * It should not be created explicitly, the event bus will create and dispose of event channels as needed.
      * @constructor
+     * @param {String} channelId , the id of this channel.
      */
     var EventChannel = function(channelId) {
-        if(!channelId) {
-            channelId = new Date().getMilliseconds() + ""  + Math.round(Math.random() * 1000);
-        }
+        /**
+         * The id of the channel
+         * @type {String}
+         * @private
+         */
         this._id = channelId;
+
+        /**
+         * A map in which the event name are keys and the values are Arrays containing the callbacks and contexts.
+         * @type {Object.<Array.<{callback:function(Event=), context:Object}>>}
+         * @private
+         */
         this._listeners = {};
+
+        /**
+         * Counter for ID generation.
+         * @type {number}
+         * @private
+         */
+        this._UID = 0;
     };
 
     /**
      *
-     * @param {Event|String} eventName , the name of the event to listen to.
+     * @param {String} eventName , the name of the event to listen to.
      * @param {Function} callback , the callback to trigger when the event is triggered on the target.
      * @param {Object} context , the context to use in the callback.
      */
     EventChannel.prototype.listen = function(eventName, callback, context) {
-        var listenersForName;
-
         // Check if there are any listeners for this event name or create a new array.
         if(!this._listeners[eventName]) {
             this._listeners[eventName] = [];
@@ -49,6 +73,12 @@
         });
     };
 
+    /**
+     * Clears the listener for a given combination of eventName, callback and context.
+     * @param {String} eventName
+     * @param {Function} callback
+     * @param {Object} context
+     */
     EventChannel.prototype.unlisten = function(eventName, callback, context) {
         var listeners = this._listeners[eventName];
         var count = listeners.length;
@@ -60,6 +90,10 @@
         }
     };
 
+    /**
+     * Dispatches the provided event, triggering the appropriate callbacks.
+     * @param {Event|String} event
+     */
     EventChannel.prototype.dispatch = function(event) {
         if(!this._muted) {
             var eventName = typeof event === "string" ? event : event.type;
@@ -71,16 +105,27 @@
         }
     };
 
+    /**
+     * Mutes this channel, preventing it from dispatching events.
+     */
     EventChannel.prototype.mute = function() {
         this._muted = true;
     };
 
+    /**
+     * Unmutes the channel, allowing events to be dispatched.
+     */
     EventChannel.prototype.unmute = function() {
         this._muted = false;
     };
 
+    /**
+     * UID generator.
+     * @returns {number}
+     * @private
+     */
     EventChannel.prototype._getUID = function() {
-        return UID++;
+        return this._UID++;
     };
 
 
@@ -95,6 +140,7 @@
     var EventBus = function() {
         this._channels = {};
         this._channels[DEFAULT_CHANNEL] = new EventChannel(DEFAULT_CHANNEL);
+        this._UID = 0;
     };
 
     /**
@@ -106,7 +152,7 @@
      * @throws {Error} if the channel does not exist.
      */
     EventBus.prototype.listen = function(eventName, callback, context, channelId) {
-        if(channelId && !this._channels[id]) {
+        if(channelId && !this._channels[channelId]) {
             throw new Error("Channel does not exists");
         }
         else {
@@ -174,5 +220,17 @@
         return !!this._channels[id];
     };
 
+    /**
+     * Auto-incremented ID generator.
+     * @returns {number}
+     * @private
+     */
+    EventBus.prototype._getUID = function() {
+        return this._UID++;
+    };
+
+
+    // Register the classes within the given namespace.
     ns.EventBus = EventBus;
+    ns.SEvent = Event;
 })(window);
