@@ -40,17 +40,17 @@
 
         // Check if there are any listeners for this event name or create a new array.
         if(!this._listeners[eventName]) {
-            listenersForName = this._listeners[eventName] = [];
+            this._listeners[eventName] = [];
         }
 
-        listenersForName.push({
+        this._listeners[eventName].push({
             callback: callback,
             context: context
         });
     };
 
     EventChannel.prototype.unlisten = function(eventName, callback, context) {
-        var listeners = this._currTargets[eventName];
+        var listeners = this._listeners[eventName];
         var count = listeners.length;
         for(var i = 0; i < count; i++) {
             if(listeners[i].callback === callback && listeners[i].context === context) {
@@ -60,10 +60,10 @@
         }
     };
 
-    EventChannel.prototype.dispatch = function(target, event) {
+    EventChannel.prototype.dispatch = function(event) {
         if(!this._muted) {
             var eventName = typeof event === "string" ? event : event.type;
-            var listeners = this._currTargets[eventName];
+            var listeners = this._listeners[eventName];
             var count = listeners.length;
             for(var i = 0; i < count; i++) {
                 listeners[i].callback.call(listeners[i].context, event);
@@ -133,19 +133,13 @@
     };
 
     /**
-     * @param {Object} target
      * @param {String} eventName
-     * @param {String=} channel , optional, the name of the channel to set the listen on.
+     * @param {String=} channelId , optional, the name of the channel to set the listen on.
      * @throws {Error} if the channel does not exist.
      */
-    EventBus.prototype.dispatch = function(target, eventName, channel) {
-        if(channel && !this._channels[id]) {
-            throw new Error("Channel does not exists");
-        }
-        else {
-            channel = channel || DEFAULT_CHANNEL;
-            return this._channels[channel].dispatch(target, eventName, callback);
-        }
+    EventBus.prototype.dispatch = function(eventName, channelId) {
+        channelId =  channelId || DEFAULT_CHANNEL;
+        return this._channels[channelId].dispatch(eventName, channelId);
     };
 
     /**
@@ -180,4 +174,5 @@
         return !!this._channels[id];
     };
 
+    ns.EventBus = EventBus;
 })(window);
