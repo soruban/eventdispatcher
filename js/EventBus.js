@@ -98,9 +98,13 @@
         if(!this._muted) {
             var eventName = typeof event === "string" ? event : event.type;
             var listeners = this._listeners[eventName];
-            var count = listeners.length;
-            for(var i = 0; i < count; i++) {
-                listeners[i].callback.call(listeners[i].context, event);
+
+            // Ensure we have listeners for that event name.
+            if(listeners) {
+                var count = listeners.length;
+                for(var i = 0; i < count; i++) {
+                    listeners[i].callback.call(listeners[i].context, event);
+                }
             }
         }
     };
@@ -152,11 +156,12 @@
      * @throws {Error} if the channel does not exist.
      */
     EventBus.prototype.listen = function(eventName, callback, context, channelId) {
-        if(channelId && !this._channels[channelId]) {
+        channelId =  channelId === undefined ? DEFAULT_CHANNEL : channelId;
+
+        if(!this._channels[channelId]) {
             throw new Error("Channel does not exists");
         }
         else {
-            channelId = channelId || DEFAULT_CHANNEL;
             this._channels[channelId].listen(eventName, callback, context);
         }
     };
@@ -166,7 +171,7 @@
      * @param {Function} callback
      * @param {Object} context
      * @param {String=} channelId , optional, the name of the channel to set the listen on.
-     * @returns {Boolean} true if we managed to successfully remoe the event, false otherwise.
+     * @returns {Boolean} true if we managed to successfully remove the event, false otherwise.
      */
     EventBus.prototype.unlisten = function(eventName, callback, context, channelId) {
         if(channelId && !this._channels[channelId]) {
@@ -181,11 +186,17 @@
     /**
      * @param {String} eventName
      * @param {String=} channelId , optional, the name of the channel to set the listen on.
-     * @throws {Error} if the channel does not exist.
+     * @throws {Error} if a channel was supplied and does not exists.
      */
     EventBus.prototype.dispatch = function(eventName, channelId) {
-        channelId =  channelId || DEFAULT_CHANNEL;
-        return this._channels[channelId].dispatch(eventName, channelId);
+        channelId =  channelId === undefined ? DEFAULT_CHANNEL : channelId;
+
+        if(!this._channels[channelId]) {
+            throw new Error("Channel " + channelId + " does not exists.");
+        }
+        else {
+            return this._channels[channelId].dispatch(eventName, channelId);
+        }
     };
 
     /**
@@ -199,17 +210,35 @@
             throw new Error("Channel " + id + " already exists.");
         }
         else {
-            this._channels[id] = new EventChannel(id);
+            var channel = new EventChannel(id);
+            this._channels[id] = channel;
+            return channel;
         }
     };
 
     /**
      * Returns the channel for the given id if it exists or null.
-     * @param {String} id
+     * @param {String} channelId
      * @returns {EventChannel}
      */
-    EventBus.prototype.getChannel = function(id) {
-        return this._channels[id] || null;
+    EventBus.prototype.getChannel = function(channelId) {
+        return this._channels[channelId] || null;
+    };
+
+    /**
+     * If the channel exists, removes it.
+     * @param channelId
+     * @returns {boolean} , true if we found a channel and removed it, false otherwise.
+     */
+    EventBus.prototype.destroyChannel = function(channelId) {
+        if(this._channels[channelId]) {
+            this._channels[channelId] = null;
+            delete  this._channels[channelId];
+            return true;
+        }
+        else {
+            return false;
+        }
     };
 
     /**
