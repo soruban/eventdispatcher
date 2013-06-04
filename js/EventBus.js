@@ -96,7 +96,7 @@
      */
     EventChannel.prototype.dispatch = function(event) {
         if(!this._muted) {
-            var eventName = typeof event === "string" ? event : event.type;
+            var eventName = typeof event === "string" ? event : event.name;
             var listeners = this._listeners[eventName];
 
             // Ensure we have listeners for that event name.
