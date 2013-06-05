@@ -35,8 +35,8 @@ Event channels:
     var channel = bus.getChannel("VW");
     
     var Car = function(channel) {
-      channel.listen("turnLeft", this, this._onTurnLeft);
-      // OR bus.listen("turnLeft", this, this._onTurnLeft, "VW");
+      channel.listen("turnLeft", this._onTurnLeft, this);
+      // OR bus.listen("turnLeft", this._onTurnLeft, this, "VW");
     };
     
     Car.prototype._onTurnLeft = function() {
