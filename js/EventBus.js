@@ -8,7 +8,7 @@
     var DEFAULT_CHANNEL = "default_channel";
 
     //==================================================================================================================
-    //  EventChannel
+    //  Event
     //==================================================================================================================
 
     /**
@@ -202,10 +202,15 @@
     /**
      * Creates a dedicated channel with the given id. This id can then be used in the listen, unlisten and dispatch
      * functions.
+     * If no id is provided, a default ID will be generated.
      * @param id
      * @throws {Error} if the channel already exists.
      */
     EventBus.prototype.createChannel = function(id) {
+        if(id === undefined) {
+            id = DEFAULT_CHANNEL + "_" + this._getUID();
+        }
+
         if(this._channels[id]) {
             throw new Error("Channel " + id + " already exists.");
         }
@@ -219,10 +224,15 @@
     /**
      * Returns the channel for the given id if it exists or null.
      * @param {String} channelId
+     * @param {Boolean} createIfNotExists
      * @returns {EventChannel}
      */
-    EventBus.prototype.getChannel = function(channelId) {
-        return this._channels[channelId] || null;
+    EventBus.prototype.getChannel = function(channelId, createIfNotExists) {
+        var channel = this._channels[channelId];
+        if(!channel && createIfNotExists) {
+            channel = this.createChannel(channelId);
+        }
+        return channel;
     };
 
     /**
