@@ -14,6 +14,9 @@
         this.context = null;
     };
 
+    /**
+     * Utility method to actually perform the event dispatch.
+     */
     EventListener.prototype.trigger = function() {
         this.callback.call(this.context, this.event);
     };
@@ -41,7 +44,7 @@
      * @param {String} eventName , the name of the event to listen to.
      * @param {Function} callback , the callback to trigger when the event is triggered.
      * @param {Object} context , the context to use when triggering the callback.
-     * @return {EventListener}
+     * @returns {EventListener}
      */
     EventDispatcher.prototype.listen = function (eventName, callback, context) {
         var listener = new EventListener();
@@ -86,6 +89,11 @@
         return false;
     };
 
+    /**
+     * If the EventListener returned from listen was stored, this method allows for it to be easily removed.
+     * @param {EventListener} listener
+     * @returns {boolean}
+     */
     EventDispatcher.prototype.unlistenListener = function (listener) {
         var currentListenersForName = this._currentListeners[listener.eventName];
         var index = currentListenersForName.indexOf(listener);
