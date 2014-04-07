@@ -15,8 +15,12 @@ describe("EventBus_testing", function() {
     }
 
     beforeEach(function(){
-        eventBus = new EventBus();
+        eventBus = new window.EventBus();
         count1 = count2 = count3 = 0;
+    });
+
+    afterEach(function(){
+        eventBus = null;
     });
 
     //==================================================================================================================

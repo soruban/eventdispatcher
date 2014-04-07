@@ -1,0 +1,27 @@
+{
+  "name": "eventdispatcher",
+  "version": "0.0.0",
+  "description": "An event dispatcher and event bus library.",
+  "main": "\"\"",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soruban/eventdispatcher.git"
+  },
+  "author": "Soruban",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/soruban/eventdispatcher/issues"
+  },
+  "homepage": "https://github.com/soruban/eventdispatcher",
+  "devDependencies": {
+    "karma": "~0.12.4",
+    "karma-jasmine": "~0.1.5",
+    "karma-chrome-launcher": "~0.1.3"
+  }
+}
