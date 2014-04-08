@@ -2,7 +2,29 @@
  * "Classical" event dispatching system. Classes that do need to dispatch event should extend the EventDispatcher.
  */
 (function (ns) {
-  var UID = 0;
+  var UID = 0,
+      ENABLE_SAME_LISTENER_ADD = false;
+
+
+  //==================================================================================================================
+  //  Event
+  //==================================================================================================================
+
+  /**
+   * The base class to be used for custom events. Only requires an eventName.
+   * @constructor
+   * @param {String} eventName
+   * @param {Object=} target , optional, the target of the event.
+   */
+  var Event = function (eventName, target) {
+    this.name = eventName;
+    this.target = target;
+  };
+
+
+  //==================================================================================================================
+  //  EventListener
+  //==================================================================================================================
 
   /**
    * Inner class used for clarity. It describes what is stored within the listeners array.
@@ -22,21 +44,52 @@
   };
 
   /**
-   * The base class to be used for custom events. Only requires an eventName.
-   * @param {String} eventName
-   * @constructor
+   * @param {EventListener} otherListener
+   * @returns {boolean}
    */
-  var Event = function (eventName) {
-    this.name = eventName;
+  EventListener.prototype.equals = function(otherListener) {
+    return this.eventName === otherListener.eventName && this.callback === otherListener.callback &&
+      this.context === otherListener.context;
   };
 
 
+  //==================================================================================================================
+  //  EventChannel
+  //==================================================================================================================
+
   /**
-   * The event dispatcher allows a class to dispatch event and trigger callbacks on listening objects.
+   * An event channel is a 'dedicated bus' with an id that allows objects to dispatch and receive events.
+   * It should not be created explicitly, the event bus will create and dispose of event channels as needed.
    * @constructor
+   * @param {String} channelId , the id of this channel.
    */
-  var EventDispatcher = function () {
-    this._currentListeners = {};
+  var EventChannel = function (id) {
+    /**
+     * The id of the channel
+     * @type {String}
+     * @private
+     */
+    this._id = id;
+
+    /**
+     * A map in which the event name are keys and the values are Arrays containing the callbacks and contexts.
+     * @type {Object.<Array.<{callback:function(Event=), context:Object}>>}
+     * @private
+     */
+    this._listeners = {};
+
+    /**
+     * Counter for ID generation.
+     * @type {number}
+     * @private
+     */
+    this._UID = 0;
+
+    /**
+     * @type {boolean}
+     * @private
+     */
+    this._muted = false;
   };
 
   /**
@@ -46,19 +99,40 @@
    * @param {Object} context , the context to use when triggering the callback.
    * @returns {EventListener}
    */
-  EventDispatcher.prototype.listen = function (eventName, callback, context) {
+  EventChannel.prototype.listen = function (eventName, callback, context) {
     var listener = new EventListener();
     listener.callback = callback;
     listener.context = context;
     listener.eventName = eventName;
 
-    if (!this._currentListeners[eventName]) {
-      this._currentListeners[eventName] = [];
+    if (!this._listeners[eventName]) {
+      this._listeners[eventName] = [];
     }
 
-    this._currentListeners[eventName].push(listener);
+    // Add the listener only if we do not mind adding the same listener twice OR it is not already in the current list.
+    if(ENABLE_SAME_LISTENER_ADD || !this._hasListener(listener)) {
+      this._listeners[eventName].push(listener);
+    }
 
     return listener;
+  };
+
+  /**
+   * @param {EventListener} listener
+   * @returns {boolean} Whether a listener equal to the current one is already stored.
+   * @private
+   */
+  EventChannel.prototype._hasListener = function(listener) {
+    var listenersArr = this._listeners[listener.eventName];
+    if(listenersArr) {
+      var matchesListener = function(element, index, array) {
+        return listener.equals(element);
+      };
+
+      return listenersArr.some(matchesListener);
+    }
+
+    return false;
   };
 
   /**
@@ -67,10 +141,10 @@
    * @param {String} eventName
    * @param {Function} callback
    * @param {Object} context
-   * @returns {boolean}
+   * @returns {boolean} whether the listener was found and deleted.
    */
-  EventDispatcher.prototype.unlisten = function (eventName, callback, context) {
-    var currentListenersForName = this._currentListeners[eventName],
+  EventChannel.prototype.unlisten = function (eventName, callback, context) {
+    var currentListenersForName = this._listeners[eventName],
       i = 0,
       listener = null,
       count = currentListenersForName ? currentListenersForName.length : 0;
@@ -80,7 +154,7 @@
       if (listener.callback === callback && listener.context === context) {
         currentListenersForName.splice(i, 1);
         if (currentListenersForName.length === 0) {
-          delete this._currentListeners[eventName];
+          delete this._listeners[eventName];
         }
         return true;
       }
@@ -94,8 +168,8 @@
    * @param {EventListener} listener
    * @returns {boolean}
    */
-  EventDispatcher.prototype.unlistenListener = function (listener) {
-    var currentListenersForName = this._currentListeners[listener.eventName];
+  EventChannel.prototype.unlistenListener = function (listener) {
+    var currentListenersForName = this._listeners[listener.eventName];
     var index = currentListenersForName.indexOf(listener);
     if (index !== -1) {
       currentListenersForName.splice(index, 1);
@@ -105,21 +179,53 @@
   };
 
   /**
+   * Dispatches the provided event, triggering the appropriate callbacks.
    * @param {Event|String} event , the event object to dispatch or String.
    */
-  EventDispatcher.prototype.dispatchEvent = function (event) {
-    var eventName = typeof event === "string" ? event : event.name;
-    var currentListenersForName = this._currentListeners[eventName];
-    if (currentListenersForName) {
-      for (var i = 0, count = currentListenersForName.length; i < count; i++) {
-        currentListenersForName[i].trigger(event);
+  EventChannel.prototype.dispatch = function (event) {
+    if (!this._muted) {
+      var eventName = typeof event === "string" ? event : event.name;
+      var currentListenersForName = this._listeners[eventName];
+      if (currentListenersForName != null) {
+        for (var i = 0, count = currentListenersForName.length; i < count; i++) {
+          currentListenersForName[i].trigger(event);
+        }
       }
     }
   };
 
-  EventDispatcher.prototype._getUID = function () {
+
+  /**
+   * Mutes this channel, preventing it from dispatching events.
+   */
+  EventChannel.prototype.mute = function () {
+    this._muted = true;
+  };
+
+  /**
+   * Unmutes the channel, allowing events to be dispatched.
+   */
+  EventChannel.prototype.unmute = function () {
+    this._muted = false;
+  };
+
+  /**
+   * @param {string} eventName
+   * @returns {Array} A shallow clone array of all the listeners corresponding to a specific event name or an empty
+   * array if none.
+   */
+  EventChannel.prototype.getListeners = function(eventName) {
+    if(this._listeners[eventName]) {
+      return this._listeners[eventName].slice(0);
+    }
+    else {
+      return [];
+    }
+  };
+
+  EventChannel.prototype._getUID = function () {
     return UID++;
   };
 
-  ns.EventDispatcher = EventDispatcher;
-})(window);
+  window.EventChannel = EventChannel;
+})();

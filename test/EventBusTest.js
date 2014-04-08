@@ -152,4 +152,14 @@ describe("EventBus_testing", function () {
     expect(error).toBeDefined();
     expect(error.message).toEqual("Channel channel1 does not exists.");
   });
+
+  it("should only add one listener when adding the same listener signature multiple times.", function(){
+    var channel = eventBus.createChannel("channel1");
+    eventBus.listen("event1", callback1, this, "channel1");
+    eventBus.listen("event1", callback1, this, "channel1");
+    eventBus.listen("event1", callback1, this, "channel1");
+
+    var allListeners = channel.getListeners("event1");
+    expect(allListeners.length).toBe(1);
+  });
 });
