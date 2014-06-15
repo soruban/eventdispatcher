@@ -6,7 +6,6 @@ var EventDispatcher = require('./EventDispatcher');
  * Only one instance of the EventBus should be created.
  * EventChannels should only be created via EventBus.channel()
  */
-var EventChannelClass = window.EventChannel;
 var DEFAULT_CHANNEL = "default_channel";
 
 /**
