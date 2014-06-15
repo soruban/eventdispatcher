@@ -30,11 +30,11 @@ var EventBus = function () {
  * @param {String=} channelId , optional, the name of the channel to set the listen on.
  * @throws {Error} if the channel does not exist.
  */
-EventBus.prototype.listen = function (eventName, callback, context, channelId) {
-  channelId = channelId === undefined ? DEFAULT_CHANNEL : channelId;
+EventBus.prototype.listen = function (channelId, eventName, callback, context) {
+  channelId = channelId == null ? DEFAULT_CHANNEL : channelId;
 
   if (!this._channels[channelId]) {
-    throw new Error("Channel does not exists");
+    throw new Error("Channel with id '" + channelId + "' does not exists");
   }
   else {
     this._channels[channelId].listen(eventName, callback, context);
@@ -48,7 +48,7 @@ EventBus.prototype.listen = function (eventName, callback, context, channelId) {
  * @param {String=} channelId , optional, the name of the channel to set the listen on.
  * @returns {Boolean} true if we managed to successfully remove the event, false otherwise.
  */
-EventBus.prototype.unlisten = function (eventName, callback, context, channelId) {
+EventBus.prototype.unlisten = function (channelId, eventName, callback, context) {
   if (channelId && !this._channels[channelId]) {
     return false;
   }
@@ -64,11 +64,11 @@ EventBus.prototype.unlisten = function (eventName, callback, context, channelId)
  * @param {String=} channelId , optional, the name of the channel to set the listen on.
  * @throws {Error} if a channel was supplied and does not exists.
  */
-EventBus.prototype.dispatch = function (eventName, data, channelId) {
-  channelId = channelId === undefined ? DEFAULT_CHANNEL : channelId;
+EventBus.prototype.dispatch = function (channelId, eventName, data) {
+  channelId = channelId == null ? DEFAULT_CHANNEL : channelId;
 
   if (this._channels[channelId] == null) {
-    throw new Error("Channel " + channelId + " does not exists.");
+    throw new Error("Channel with id '" + channelId + "' does not exists.");
   }
   else {
     return this._channels[channelId].dispatch(eventName, data);
@@ -88,7 +88,7 @@ EventBus.prototype._createChannel = function (id) {
   }
 
   if (this._channels[id]) {
-    throw new Error("Channel " + id + " already exists.");
+    throw new Error("Channel with id '" + id + "' already exists.");
   }
   else {
     var channel = new EventDispatcher(id);
