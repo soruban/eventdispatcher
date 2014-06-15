@@ -19,7 +19,7 @@ var DEFAULT_CHANNEL = "default_channel";
  */
 var EventBus = function () {
   this._channels = {};
-  this._channels[DEFAULT_CHANNEL] = new EventChannelClass(DEFAULT_CHANNEL);
+  this._channels[DEFAULT_CHANNEL] = new EventDispatcher(DEFAULT_CHANNEL);
   this._UID = 0;
 };
 

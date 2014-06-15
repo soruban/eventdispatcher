@@ -1,4 +1,6 @@
-describe("EventBus_testing", function () {
+var EventBus = require('../js/EventBus');
+
+describe("EventBus testing", function () {
   var count1 = 0, count2 = 0, count3 = 0;
   var eventBus = null;
 
@@ -15,7 +17,7 @@ describe("EventBus_testing", function () {
   }
 
   beforeEach(function () {
-    eventBus = new window.EventBus();
+    eventBus = new EventBus();
     count1 = count2 = count3 = 0;
   });
 
@@ -82,18 +84,18 @@ describe("EventBus_testing", function () {
   //==================================================================================================================
 
   it("triggers callback on an event channel", function () {
-    eventBus.createChannel("channel1");
+    eventBus.channel("channel1");
     eventBus.listen("event1", callback1, this, "channel1");
     eventBus.dispatch("event1", "channel1");
     expect(count1).toBe(1);
   });
 
   it("triggers callbacks on different channels appropriately", function () {
-    eventBus.createChannel("channel1");
+    eventBus.channel("channel1");
     eventBus.listen("event1", callback1, this, "channel1");
     eventBus.dispatch("event1", "channel1");
 
-    eventBus.createChannel("channel2");
+    eventBus.channel("channel2");
     eventBus.listen("event2", callback2, this, "channel2");
     eventBus.dispatch("event2", "channel2");
     expect(count1).toBe(1);
@@ -104,7 +106,7 @@ describe("EventBus_testing", function () {
 
   describe("channel mutes and unmute works", function () {
     var bus0 = new EventBus();
-    var channel0 = bus0.createChannel("channel0");
+    var channel0 = bus0.channel("channel0");
     var count0 = 0;
 
     function callback0() {
@@ -127,20 +129,6 @@ describe("EventBus_testing", function () {
     });
   });
 
-  it("does not allow duplicate channels", function () {
-    eventBus.createChannel("channel1");
-
-    var error;
-    try {
-      eventBus.createChannel("channel1");
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error).toBeDefined();
-    expect(error.message).toEqual("Channel channel1 already exists.");
-  });
-
   it("does not allow dispatching on a non-existing channel", function () {
     var error;
     try {
@@ -154,7 +142,7 @@ describe("EventBus_testing", function () {
   });
 
   it("should only add one listener when adding the same listener signature multiple times.", function(){
-    var channel = eventBus.createChannel("channel1");
+    var channel = eventBus.channel("channel1");
     eventBus.listen("event1", callback1, this, "channel1");
     eventBus.listen("event1", callback1, this, "channel1");
     eventBus.listen("event1", callback1, this, "channel1");
