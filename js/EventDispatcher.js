@@ -1,4 +1,3 @@
-var Event = require('./Event');
 var EventListener = require('./EventListener');
 
 /**
@@ -127,15 +126,15 @@ EventDisptacher.prototype.unlistenListener = function (listener) {
 
 /**
  * Dispatches the provided event, triggering the appropriate callbacks.
- * @param {Event|String} event , the event object to dispatch or String.
+ * @param {String} eventName , the event object to dispatch or String.
+ * @param {Object} data , data to pass witht the event.
  */
-EventDisptacher.prototype.dispatch = function (event) {
+EventDisptacher.prototype.dispatch = function (eventName, data) {
   if (!this._muted) {
-    var eventName = typeof event === "string" ? event : event.name;
     var currentListenersForName = this._listeners[eventName];
     if (currentListenersForName != null) {
       for (var i = 0, count = currentListenersForName.length; i < count; i++) {
-        currentListenersForName[i].trigger(event);
+        currentListenersForName[i].trigger(data);
       }
     }
   }

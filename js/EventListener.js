@@ -11,8 +11,8 @@ var EventListener = function (name, callback, context) {
 /**
  * Utility method to actually perform the event dispatch.
  */
-EventListener.prototype.trigger = function () {
-  this.callback.call(this.context, this.event);
+EventListener.prototype.trigger = function (data) {
+  this.callback.call(this.context, data);
 };
 
 /**
