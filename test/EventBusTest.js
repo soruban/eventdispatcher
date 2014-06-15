@@ -86,53 +86,64 @@ describe("EventBus testing", function () {
   it("triggers callback on an event channel", function () {
     eventBus.channel("channel1");
     eventBus.listen("event1", callback1, this, "channel1");
-    eventBus.dispatch("event1", "channel1");
+    eventBus.dispatch("event1", null, "channel1");
     expect(count1).toBe(1);
   });
 
   it("triggers callbacks on different channels appropriately", function () {
     eventBus.channel("channel1");
     eventBus.listen("event1", callback1, this, "channel1");
-    eventBus.dispatch("event1", "channel1");
+    eventBus.dispatch("event1", null, "channel1");
 
     eventBus.channel("channel2");
     eventBus.listen("event2", callback2, this, "channel2");
-    eventBus.dispatch("event2", "channel2");
+    eventBus.dispatch("event2", null, "channel2");
     expect(count1).toBe(1);
     expect(count2).toBe(1);
     expect(count3).toBe(0);
   });
 
 
-  describe("channel mutes and unmute works", function () {
-    var bus0 = new EventBus();
-    var channel0 = bus0.channel("channel0");
-    var count0 = 0;
+  describe("channel mutes and unmute works,", function () {
+    var dummyObj = null;
+    var bus0 = null;
+    var channel0 = null;
 
-    function callback0() {
-      count0++;
-    }
+    beforeEach(function(){
+      dummyObj = {
+        foo: function(){}
+      };
+      bus0 = new EventBus();
+      channel0 = bus0.channel("channel0");
+    });
 
     it("does not trigger callbacks on a muted channel", function () {
-      bus0.listen("event1", callback0, this, "channel0");
-      bus0.dispatch("event1", "channel0");
+      spyOn(dummyObj, 'foo');
+      bus0.listen("event1", dummyObj.foo, this, "channel0");
+      bus0.dispatch("event1", null, "channel0");
       channel0.mute();
-      bus0.dispatch("event1", "channel0");
-      bus0.dispatch("event1", "channel0");
-      expect(count0).toBe(1);
+
+      bus0.dispatch("event1", null, "channel0");
+
+      expect(dummyObj.foo.calls.count()).toBe(1);
     });
 
     it("triggers callbacks once the channel is unmuted", function () {
+      spyOn(dummyObj, 'foo');
+      bus0.listen("event1", dummyObj.foo, this, "channel0");
+      channel0.mute();
       channel0.unmute();
-      bus0.dispatch("event1", "channel0");
-      expect(count0).toBe(2);
+      debugger;
+
+      bus0.dispatch("event1", null, "channel0");
+      expect(dummyObj.foo.calls.count()).toBe(1);
     });
   });
 
   it("does not allow dispatching on a non-existing channel", function () {
     var error;
     try {
-      eventBus.dispatch("event1", "channel1");
+      eventBus.dispatch("event1", null, "channel1");
     } catch (err) {
       error = err;
     }
