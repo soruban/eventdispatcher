@@ -60,18 +60,18 @@ EventBus.prototype.unlisten = function (eventName, callback, context, channelId)
 };
 
 /**
- * @param {String} eventName
+ * @param {String|Object} event
  * @param {String=} channelId , optional, the name of the channel to set the listen on.
  * @throws {Error} if a channel was supplied and does not exists.
  */
-EventBus.prototype.dispatch = function (eventName, channelId) {
+EventBus.prototype.dispatch = function (event, channelId) {
   channelId = channelId === undefined ? DEFAULT_CHANNEL : channelId;
 
   if (!this._channels[channelId]) {
     throw new Error("Channel " + channelId + " does not exists.");
   }
   else {
-    return this._channels[channelId].dispatch(eventName, channelId);
+    return this._channels[channelId].dispatch(event, channelId);
   }
 };
 
