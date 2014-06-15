@@ -1,14 +1,13 @@
 var gulp = require('gulp');
 var browserify = require('gulp-browserify');
 
-// Basic usage
+// Build into a single file with EventBus set as the global namespace.
 gulp.task('build', function() {
-  // Single entry point to browserify
   gulp.src('./js/EventBus.js')
     .pipe(browserify({
       standalone: "EventBus"
     }))
-    .pipe(gulp.dest('./build/js'))
+    .pipe(gulp.dest('./build'))
 });
 
-gulp.task('default', ['build'])
+gulp.task('default', ['build']);
